@@ -75,7 +75,19 @@
             </form>
         </div>
     </div>
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-30 hidden">
+        <div class="relative max-w-4xl w-full mx-4">
+            <button id="closeDetailModalBtn" class="absolute top-0 right-0 m-4 text-white text-3xl font-bold z-40" style="text-shadow: 0 0 5px #000;">&times;</button>
+            
+            <div class="bg-white rounded-lg overflow-hidden shadow-2xl">
+                <img id="detailImage" src="" alt="Detail Gambar" class="w-full max-h-[90vh] object-contain cursor-pointer">
+            </div>
 
+            <div class="text-white text-center p-2">
+                <h3 id="detailTitle" class="text-xl font-semibold"></h3>
+            </div>
+        </div>
+    </div>
     <main class="container mx-auto p-8">
         <h2 class="text-3xl font-extrabold text-gray-800 mb-6 border-b pb-2">Galeri Karya</h2>
         <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
@@ -84,8 +96,8 @@
     <footer class="flex items-center justify-center bg-black sticky bottom-0 shadow-md p-4 mt-8">
         <p class="text-white ">© 2025 Taofik M Dimas. All rights reserved.</p>
     </footer>
-  
- <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
     <script>
@@ -104,9 +116,6 @@
         
         // Definisikan variabel GLOBAL 'db' yang digunakan oleh script.js
         const db = firebase.firestore();
-        
-        // Catatan: Variabel 'storage' TIDAK didefinisikan lagi
-        // karena upload file ditangani oleh Vercel API ke Cloudinary.
     </script>
     
     <script src="script.js"></script>
@@ -114,7 +123,3 @@
 </body>
 
 </html>
-
-
-
-
