@@ -131,7 +131,7 @@ function createPhotoCard(doc) {
 
     // --- STRUKTUR HTML KARTU DENGAN TOMBOL DOWNLOAD ---
     card.innerHTML = `
-        <div class="h-48 overflow-hidden bg-gray-200">
+        <div class="h-48  bg-gray-200">
             <img src="${data.imageUrl}" alt="${data.title}" 
                  class="w-full h-full object-cover transform hover:scale-105 transition duration-500" 
                  loading="lazy">
@@ -182,3 +182,4 @@ function loadAndListenForPhotos() {
 
 // Panggil fungsi untuk memulai tampilan galeri
 loadAndListenForPhotos();
+
