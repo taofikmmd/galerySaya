@@ -88,6 +88,7 @@ async function uploadToCloudinaryAndFirestore(file, title) {
                 await db.collection('photos').add({
                     title: title,
                     imageUrl: finalImageUrl,
+                    // Pastikan timestamp disimpan agar pengurutan bekerja
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
@@ -126,16 +127,41 @@ uploadForm.addEventListener('submit', async (e) => {
     }
 });
 
+
 // ===============================================
 // Bagian 3: Logika Memuat dan Menampilkan Galeri (Real-time)
 // ===============================================
 
-// --- FUNGSI PEMBUAT KARTU GAMBAR (DENGAN LOGIKA KLIK DETAIL) ---
+// --- FUNGSI HAPUS FOTO DARI FIRESTORE (BARU) ---
+async function deletePhoto(docId, title) {
+    // Kami hanya menghapus dari Firestore. Penghapusan dari Cloudinary memerlukan 
+    // endpoint API tambahan yang tidak ada di kode front-end ini.
+    
+    if (confirm(`Anda yakin ingin menghapus foto "${title}" secara permanen?`)) {
+        try {
+            console.log(`Menghapus dokumen Firestore dengan ID: ${docId}`);
+            
+            // Hapus dari Firestore
+            await db.collection('photos').doc(docId).delete();
+
+            alert("Foto berhasil dihapus dari galeri!");
+            // Karena menggunakan onSnapshot, kartu akan otomatis hilang dari tampilan.
+
+        } catch (error) {
+            console.error("Gagal menghapus foto:", error);
+            alert("Terjadi kesalahan saat mencoba menghapus foto. Pastikan Anda memiliki izin Firestore.");
+        }
+    }
+}
+
+
+// --- FUNGSI PEMBUAT KARTU GAMBAR (DENGAN TOMBOL HAPUS) ---
 function createPhotoCard(doc) {
     const data = doc.data();
+    const docId = doc.id; // Ambil ID Dokumen Firestore
     const card = document.createElement('div');
     card.className = 'image-card bg-white rounded-xl shadow-lg overflow-hidden fade-in';
-    card.id = `photo-${doc.id}`; 
+    card.id = `photo-${docId}`; 
 
     // Format waktu
     let timeText = '';
@@ -148,9 +174,9 @@ function createPhotoCard(doc) {
         });
     }
 
-    // --- STRUKTUR HTML KARTU ---
+    // --- STRUKTUR HTML KARTU (dengan tombol HAPUS) ---
     card.innerHTML = `
-        <div class="h-48 bg-gray-200 overflow-hidden cursor-pointer" id="imageContainer-${doc.id}">
+        <div class="h-48 bg-gray-200 overflow-hidden cursor-pointer" id="imageContainer-${docId}">
             <img src="${data.imageUrl}" alt="${data.title}" 
                  class="w-full h-full object-cover transform hover:scale-105 transition duration-500" 
                  loading="lazy">
@@ -159,24 +185,35 @@ function createPhotoCard(doc) {
             <h3 class="text-lg font-bold text-gray-800">${data.title}</h3>
             ${timeText ? `<p class="text-sm text-gray-500 mt-1">${timeText}</p>` : ''}
             
-            <div class="mt-3">
+            <div class="mt-3 flex space-x-2">
                 <a href="${data.imageUrl}" download="${data.title || 'gambar'}.jpg" 
-                   class="inline-flex items-center justify-center w-full bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold py-2 px-4 rounded-lg transition duration-300">
-                    ⬇️ Download Foto
+                   class="inline-flex items-center justify-center w-2/3 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold py-2 px-4 rounded-lg transition duration-300">
+                    ⬇️ Download
                 </a>
+
+                <button data-id="${docId}" 
+                        class="delete-btn w-1/3 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold py-2 px-4 rounded-lg transition duration-300">
+                    🗑️ Hapus
+                </button>
             </div>
             
         </div>
     `;
 
-    // --- LOGIKA KLIK BARU: MEMBUKA MODAL DETAIL ---
-    const imageContainer = card.querySelector(`#imageContainer-${doc.id}`);
+    // --- LOGIKA KLIK MEMBUKA MODAL DETAIL ---
+    const imageContainer = card.querySelector(`#imageContainer-${docId}`);
     imageContainer.addEventListener('click', () => {
-        // Atur sumber gambar, judul, dan tampilkan modal
         detailImage.src = data.imageUrl;
         detailImage.alt = data.title;
         detailTitle.textContent = data.title;
         detailModal.classList.remove('hidden');
+    });
+    
+    // --- LOGIKA KLIK HAPUS (BARU) ---
+    const deleteButton = card.querySelector('.delete-btn');
+    deleteButton.addEventListener('click', () => {
+        // Panggil fungsi deletePhoto
+        deletePhoto(docId, data.title); 
     });
 
     return card;
@@ -189,12 +226,7 @@ function loadAndListenForPhotos() {
         .orderBy('timestamp', 'desc') 
         .onSnapshot((snapshot) => {
             
-            // Perbaikan Logika Pemuatan Awal dan Urutan
-            
-            // 1. Kumpulkan semua dokumen yang akan ditambahkan/diperbarui
-            let tempDocs = [];
-            
-            // 2. Hapus elemen yang dihapus (jika ada)
+            // 1. Hapus elemen yang dihapus
             snapshot.docChanges().forEach((change) => {
                 if (change.type === 'removed') {
                     const removedCard = document.getElementById(`photo-${change.doc.id}`);
@@ -204,17 +236,13 @@ function loadAndListenForPhotos() {
                 }
             });
 
-            // 3. AMBIL SEMUA DOKUMEN (setelah penghapusan) dan gambar ulang GALERI
-            // Ini akan mengatasi masalah urutan terbalik pada pemuatan awal
-            
-            // Hapus semua kartu yang ada sebelum digambar ulang
+            // 2. Gambar ulang GALERI untuk memastikan urutan benar saat refresh/pemuatan awal
             gallery.innerHTML = ''; 
             
-            // Ambil semua dokumen yang ada di snapshot dan gambar ulang
-            // Karena sudah diurutkan dengan .orderBy('timestamp', 'desc'), urutannya pasti benar.
+            // 3. Ambil semua dokumen yang ada di snapshot dan gambar ulang
             snapshot.docs.forEach(doc => {
                 const newCard = createPhotoCard(doc);
-                // Gunakan appendChild untuk menambahkan di akhir, karena dokumen sudah terurut descending
+                // Gunakan appendChild karena dokumen sudah terurut descending
                 gallery.appendChild(newCard);
             });
 
