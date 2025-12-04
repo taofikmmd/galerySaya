@@ -188,21 +188,37 @@ function loadAndListenForPhotos() {
         // Pengurutan berdasarkan timestamp secara descending (terbaru di atas)
         .orderBy('timestamp', 'desc') 
         .onSnapshot((snapshot) => {
+            
+            // Perbaikan Logika Pemuatan Awal dan Urutan
+            
+            // 1. Kumpulkan semua dokumen yang akan ditambahkan/diperbarui
+            let tempDocs = [];
+            
+            // 2. Hapus elemen yang dihapus (jika ada)
             snapshot.docChanges().forEach((change) => {
-                const doc = change.doc;
-
-                if (change.type === 'added') {
-                    // Tambahkan elemen baru (prepend untuk menempatkan yang terbaru di awal)
-                    const newCard = createPhotoCard(doc);
-                    gallery.prepend(newCard);  
-                    
-                } else if (change.type === 'removed') {
-                    const removedCard = document.getElementById(`photo-${doc.id}`);
+                if (change.type === 'removed') {
+                    const removedCard = document.getElementById(`photo-${change.doc.id}`);
                     if (removedCard) {
                         removedCard.remove();
                     }
                 }
             });
+
+            // 3. AMBIL SEMUA DOKUMEN (setelah penghapusan) dan gambar ulang GALERI
+            // Ini akan mengatasi masalah urutan terbalik pada pemuatan awal
+            
+            // Hapus semua kartu yang ada sebelum digambar ulang
+            gallery.innerHTML = ''; 
+            
+            // Ambil semua dokumen yang ada di snapshot dan gambar ulang
+            // Karena sudah diurutkan dengan .orderBy('timestamp', 'desc'), urutannya pasti benar.
+            snapshot.docs.forEach(doc => {
+                const newCard = createPhotoCard(doc);
+                // Gunakan appendChild untuk menambahkan di akhir, karena dokumen sudah terurut descending
+                gallery.appendChild(newCard);
+            });
+
+
         }, (error) => {
             console.error("Gagal memuat galeri dari Firestore:", error);
             gallery.innerHTML = '<p class="text-red-600">Gagal memuat galeri. Pastikan aturan database sudah diatur dan koneksi berfungsi.</p>';
