@@ -11,12 +11,12 @@ const cloudinary = require('cloudinary').v2;
 // dan asumsikan fungsi API ini hanya mengunggah ke Cloudinary dan mengembalikan URL.
 
 cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME, // Menggunakan nama variabel yang sudah diatur di Vercel
+    api_key: process.env.CLOUDINARY_API_KEY,       // Menggunakan nama variabel
+    api_secret: process.env.CLOUDINARY_API_SECRET  // Menggunakan nama variabel
 });
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
@@ -45,4 +45,5 @@ export default async function handler(req, res) {
         console.error("Cloudinary Upload Error:", error);
         res.status(500).json({ message: 'Failed to upload photo to Cloudinary.' });
     }
+
 }
