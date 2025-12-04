@@ -46,25 +46,40 @@ async function uploadToCloudinaryAndFirestore(file, title) {
 }
 
 // --- LOGIKA UNGGAH FOTO (MODAL SUBMIT) ---
-uploadForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+// Mendapatkan elemen HTML yang diperlukan
+const uploadBtn = document.getElementById('uploadBtn');
+const uploadModal = document.getElementById('uploadModal');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const uploadForm = document.getElementById('uploadForm');
+const gallery = document.getElementById('gallery');
 
-    const titleInput = document.getElementById('photoTitle');
-    const fileInput = document.getElementById('photoFile');
+// 1. Logika untuk MENAMPILKAN modal ketika tombol "Unggah Foto" diklik
+if (uploadBtn) {
+    uploadBtn.addEventListener('click', () => {
+        // Menghapus kelas 'hidden' untuk menampilkan modal
+        uploadModal.classList.remove('hidden');
+    });
+}
 
-    const title = titleInput.value;
-    const file = fileInput.files[0];
+// 2. Logika untuk MENYEMBUNYIKAN modal ketika tombol "Batal" diklik
+if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', () => {
+        // Menambahkan kembali kelas 'hidden' untuk menyembunyikan modal
+        uploadModal.classList.add('hidden');
+        uploadForm.reset(); // Mereset form jika dibatalkan
+    });
+}
 
-    if (file) {
-        try {
-            await uploadToCloudinaryAndFirestore(file, title);
-        } catch (error) {
-            // Error sudah ditampilkan via alert di fungsi uploadToCloudinaryAndFirestore
-            console.log("Upload gagal, mencoba reset form...");
-        } finally {
-            // OPERASI INI AKAN SELALU DIJALANKAN (BERHASIL ATAU GAGAL)
-            uploadForm.reset();
+// 3. Logika untuk MENYEMBUNYIKAN modal ketika mengklik area luar modal (overlay)
+if (uploadModal) {
+    uploadModal.addEventListener('click', (e) => {
+        // Memastikan klik dilakukan langsung pada overlay (bukan di dalam kotak modal)
+        if (e.target === uploadModal) {
             uploadModal.classList.add('hidden');
+            uploadForm.reset(); // Mereset form
         }
-    }
-});
+    });
+}
+
+// ... (Di bawah kode ini baru diikuti oleh kode inisialisasi Firebase dan fungsi uploadToCloudinaryAndFirestore));
+
