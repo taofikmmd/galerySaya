@@ -85,11 +85,36 @@
         <p class="text-white ">© 2025 Taofik M Dimas. All rights reserved.</p>
     </footer>
   
+ <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script>
+        // GANTI DENGAN KUNCI KONFIGURASI FIRESTORE PROYEK ANDA!
+        const firebaseConfig = {
+            apiKey: "AIzaSyBay_LZcr0vaYM6f3V0hxvROPZoFCrgm4I",
+            authDomain: "galerysaya-4550c.firebaseapp.com",
+            projectId: "galerysaya-4550c",
+            // StorageBucket tidak diperlukan karena kita pakai Cloudinary
+            messagingSenderId: "570838199630",
+            appId: "1:570838199630:web:4b2ff3fa216f15aca4821f"
+        };
+
+        // Inisialisasi Firebase App
+        firebase.initializeApp(firebaseConfig);
+        
+        // Definisikan variabel GLOBAL 'db' yang digunakan oleh script.js
+        const db = firebase.firestore();
+        
+        // Catatan: Variabel 'storage' TIDAK didefinisikan lagi
+        // karena upload file ditangani oleh Vercel API ke Cloudinary.
+    </script>
+    
     <script src="script.js"></script>
 
 </body>
 
 </html>
+
 
 
 
