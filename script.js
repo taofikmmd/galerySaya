@@ -8,14 +8,21 @@ const closeModalBtn = document.getElementById('closeModalBtn');
 const uploadForm = document.getElementById('uploadForm');
 const gallery = document.getElementById('gallery');
 
-// 1. Logika untuk MENAMPILKAN modal ketika tombol "Unggah Foto" diklik
+// Variabel BARU untuk Modal Detail
+const detailModal = document.getElementById('detailModal'); 
+const detailImage = document.getElementById('detailImage');
+const closeDetailModalBtn = document.getElementById('closeDetailModalBtn');
+const detailTitle = document.getElementById('detailTitle');
+
+
+// 1. Logika untuk MENAMPILKAN modal UNGGAH
 if (uploadBtn) {
     uploadBtn.addEventListener('click', () => {
         uploadModal.classList.remove('hidden');
     });
 }
 
-// 2. Logika untuk MENYEMBUNYIKAN modal ketika tombol "Batal" diklik
+// 2. Logika untuk MENYEMBUNYIKAN modal UNGGAH
 if (closeModalBtn) {
     closeModalBtn.addEventListener('click', () => {
         uploadModal.classList.add('hidden');
@@ -23,7 +30,7 @@ if (closeModalBtn) {
     });
 }
 
-// 3. Logika untuk MENYEMBUNYIKAN modal ketika mengklik area luar modal (overlay)
+// 3. Logika untuk MENYEMBUNYIKAN modal UNGGAH ketika mengklik area luar
 if (uploadModal) {
     uploadModal.addEventListener('click', (e) => {
         if (e.target === uploadModal) {
@@ -33,13 +40,30 @@ if (uploadModal) {
     });
 }
 
+// 4. Logika untuk MENYEMBUNYIKAN modal DETAIL (BARU)
+if (closeDetailModalBtn) {
+    closeDetailModalBtn.addEventListener('click', () => {
+        detailModal.classList.add('hidden');
+    });
+}
+
+// 5. Logika untuk MENYEMBUNYIKAN modal DETAIL ketika mengklik area luar (BARU)
+if (detailModal) {
+    detailModal.addEventListener('click', (e) => {
+        // Hanya sembunyikan jika yang diklik adalah latar belakang modal atau gambar
+        if (e.target.id === 'detailModal' || e.target.id === 'detailImage') {
+            detailModal.classList.add('hidden');
+        }
+    });
+}
+
+
 // ===============================================
 // Bagian 2: Logika Unggah ke Cloudinary via Vercel API
 // ===============================================
 
 async function uploadToCloudinaryAndFirestore(file, title) {
     return new Promise((resolve, reject) => {
-        // 1. Baca file sebagai Base64
         const reader = new FileReader();
         reader.readAsDataURL(file);
 
@@ -47,7 +71,6 @@ async function uploadToCloudinaryAndFirestore(file, title) {
             const imageBase64 = reader.result;
             
             try {
-                // 2. Kirim data Base64 ke API Backend Vercel
                 const apiResponse = await fetch('/api/upload-to-cloud', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -62,8 +85,6 @@ async function uploadToCloudinaryAndFirestore(file, title) {
                 const result = await apiResponse.json();
                 const finalImageUrl = result.imageUrl;
 
-                // 3. Simpan Metadata (URL Cloudinary) ke Firestore
-                // Variabel 'db' dan 'firebase' harus didefinisikan di index.html
                 await db.collection('photos').add({
                     title: title,
                     imageUrl: finalImageUrl,
@@ -95,12 +116,10 @@ uploadForm.addEventListener('submit', async (e) => {
 
     if (file) {
         try {
-            // Panggil fungsi upload
             await uploadToCloudinaryAndFirestore(file, title);
         } catch (error) {
             // Error sudah ditangani di fungsi di atas
         } finally {
-            // Operasi ini selalu dijalankan (berhasil atau gagal)
             uploadForm.reset();
             uploadModal.classList.add('hidden');
         }
@@ -111,7 +130,7 @@ uploadForm.addEventListener('submit', async (e) => {
 // Bagian 3: Logika Memuat dan Menampilkan Galeri (Real-time)
 // ===============================================
 
-// --- FUNGSI PEMBUAT KARTU GAMBAR (DENGAN TOMBOL DOWNLOAD BARU) ---
+// --- FUNGSI PEMBUAT KARTU GAMBAR (DENGAN LOGIKA KLIK DETAIL) ---
 function createPhotoCard(doc) {
     const data = doc.data();
     const card = document.createElement('div');
@@ -129,9 +148,9 @@ function createPhotoCard(doc) {
         });
     }
 
-    // --- STRUKTUR HTML KARTU DENGAN TOMBOL DOWNLOAD ---
+    // --- STRUKTUR HTML KARTU ---
     card.innerHTML = `
-        <div class="h-48  bg-gray-200">
+        <div class="h-48 bg-gray-200 overflow-hidden cursor-pointer" id="imageContainer-${doc.id}">
             <img src="${data.imageUrl}" alt="${data.title}" 
                  class="w-full h-full object-cover transform hover:scale-105 transition duration-500" 
                  loading="lazy">
@@ -149,30 +168,40 @@ function createPhotoCard(doc) {
             
         </div>
     `;
+
+    // --- LOGIKA KLIK BARU: MEMBUKA MODAL DETAIL ---
+    const imageContainer = card.querySelector(`#imageContainer-${doc.id}`);
+    imageContainer.addEventListener('click', () => {
+        // Atur sumber gambar, judul, dan tampilkan modal
+        detailImage.src = data.imageUrl;
+        detailImage.alt = data.title;
+        detailTitle.textContent = data.title;
+        detailModal.classList.remove('hidden');
+    });
+
     return card;
 }
 
-// --- FUNGSI MEMUAT DATA FIRESTORE (Real-time) ---
+// --- FUNGSI MEMUAT DATA FIRESTORE (Real-time, Diurutkan Terbaru) ---
 function loadAndListenForPhotos() {
     db.collection('photos')
-        .orderBy('timestamp', 'desc')
+        // Pengurutan berdasarkan timestamp secara descending (terbaru di atas)
+        .orderBy('timestamp', 'desc') 
         .onSnapshot((snapshot) => {
             snapshot.docChanges().forEach((change) => {
                 const doc = change.doc;
 
                 if (change.type === 'added') {
-                    // Hanya tambahkan elemen baru
+                    // Tambahkan elemen baru (prepend untuk menempatkan yang terbaru di awal)
                     const newCard = createPhotoCard(doc);
                     gallery.prepend(newCard);  
                     
                 } else if (change.type === 'removed') {
-                    // Hapus elemen jika dokumen dihapus
                     const removedCard = document.getElementById(`photo-${doc.id}`);
                     if (removedCard) {
                         removedCard.remove();
                     }
                 }
-                // Logika 'modified' dapat ditambahkan di sini jika perlu
             });
         }, (error) => {
             console.error("Gagal memuat galeri dari Firestore:", error);
@@ -182,4 +211,3 @@ function loadAndListenForPhotos() {
 
 // Panggil fungsi untuk memulai tampilan galeri
 loadAndListenForPhotos();
-
