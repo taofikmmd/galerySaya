@@ -3,47 +3,49 @@
 
 const cloudinary = require('cloudinary').v2;
 
-// Konfigurasi Firebase Firestore (asumsi db adalah variabel Firestore yang sudah terinisialisasi)
-// Anda perlu membuat koneksi Firestore di sini atau di file terpisah.
-// Untuk Vercel Serverless, Anda harus mengimpor admin SDK atau menggunakan metode yang berbeda.
-
-// Karena Anda menggunakan JavaScript klien (web SDK) di frontend, mari kita ubah fokus
-// dan asumsikan fungsi API ini hanya mengunggah ke Cloudinary dan mengembalikan URL.
-
+// Konfigurasi Cloudinary menggunakan Environment Variables Vercel
 cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME, // Menggunakan nama variabel yang sudah diatur di Vercel
-    api_key: process.env.CLOUDINARY_API_KEY,       // Menggunakan nama variabel
-    api_secret: process.env.CLOUDINARY_API_SECRET  // Menggunakan nama variabel
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true, // Direkomendasikan untuk URL HTTPS
 });
 
+// Gunakan module.exports karena Anda menggunakan require di atas (CommonJS)
 module.exports = async (req, res) => {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ message: 'Method Not Allowed' });
+    if (req.method !== 'POST') {
+        // Menggunakan header Allow yang baik
+        res.setHeader('Allow', 'POST');
+        return res.status(405).json({ message: 'Method Not Allowed' });
+    }
+
+    // Memastikan body sudah tersedia
+    if (!req.body) {
+        return res.status(400).json({ message: 'Request body is missing.' });
     }
 
-    const { title, imageBase64 } = req.body; // Menerima base64 dari frontend
+    const { title, imageBase64 } = req.body; // Menerima base64 dari frontend
 
-    if (!title || !imageBase64) {
-        return res.status(400).json({ message: 'Title and imageBase64 are required.' });
-    }
+    if (!title || !imageBase64) {
+        return res.status(400).json({ message: 'Title and imageBase64 are required.' });
+    }
 
-    try {
-        // Unggah Base64 ke Cloudinary
-        const cloudinaryResponse = await cloudinary.uploader.upload(imageBase64, {
-            folder: 'vercel-gallery',
-            public_id: `${Date.now()}_${title.replace(/ /g, '_')}`,
-        });
+    try {
+        // Unggah Base64 ke Cloudinary
+        const cloudinaryResponse = await cloudinary.uploader.upload(imageBase64, {
+            folder: 'vercel-gallery',
+            // Membuat ID unik dari timestamp dan judul
+            public_id: `${Date.now()}_${title.replace(/[^a-zA-Z0-9]/g, '_')}`, 
+        });
 
-        const imageUrl = cloudinaryResponse.secure_url;
+        const imageUrl = cloudinaryResponse.secure_url;
 
-        // KARENA KITA TIDAK BISA MEMBUAT KONEKSI FIRESTORE DI SINI SECARA MUDAH,
-        // KITA AKAN MENGEMBALIKAN URL KE FRONTEND, DAN FRONTEND YANG AKAN MENYIMPANNYA KE FIRESTORE.
+        // Mengembalikan URL ke frontend
+        res.status(200).json({ message: 'Upload success', title, imageUrl });
 
-        res.status(200).json({ message: 'Upload success', title, imageUrl });
-
-    } catch (error) {
-        console.error("Cloudinary Upload Error:", error);
-        res.status(500).json({ message: 'Failed to upload photo to Cloudinary.' });
-    }
-
-}
+    } catch (error) {
+        console.error("Cloudinary Upload Error:", error.message || error);
+        // Mengirim error 500
+        res.status(500).json({ message: 'Failed to upload photo to Cloudinary.', error: error.message });
+    }
+};
