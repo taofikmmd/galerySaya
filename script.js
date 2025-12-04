@@ -187,13 +187,13 @@ function createPhotoCard(doc) {
             
             <div class="mt-3 flex space-x-2">
                 <a href="${data.imageUrl}" download="${data.title || 'gambar'}.jpg" 
-                   class="inline-flex items-center justify-center w-2/3 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold py-2 px-4 rounded-lg transition duration-300">
-                    ⬇️ Download
+                   class="inline-flex items-center justify-center w-2/3 bg-indigo-900 hover:bg-indigo-600 text-white text-sm font-semibold py-2 px-4 rounded-lg transition duration-300">
+                     Download
                 </a>
 
                 <button data-id="${docId}" 
-                        class="delete-btn w-1/3 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold py-2 px-4 rounded-lg transition duration-300">
-                    🗑️ Hapus
+                        class="delete-btn w-1/3 bg-red-700 hover:bg-red-600 text-white text-sm font-semibold py-2 px-4 rounded-lg transition duration-300">
+                     Hapus
                 </button>
             </div>
             
@@ -255,3 +255,4 @@ function loadAndListenForPhotos() {
 
 // Panggil fungsi untuk memulai tampilan galeri
 loadAndListenForPhotos();
+
