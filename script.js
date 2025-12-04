@@ -111,7 +111,7 @@ uploadForm.addEventListener('submit', async (e) => {
 // Bagian 3: Logika Memuat dan Menampilkan Galeri (Real-time)
 // ===============================================
 
-// --- FUNGSI PEMBUAT KARTU GAMBAR ---
+// --- FUNGSI PEMBUAT KARTU GAMBAR (DENGAN TOMBOL DOWNLOAD BARU) ---
 function createPhotoCard(doc) {
     const data = doc.data();
     const card = document.createElement('div');
@@ -129,6 +129,7 @@ function createPhotoCard(doc) {
         });
     }
 
+    // --- STRUKTUR HTML KARTU DENGAN TOMBOL DOWNLOAD ---
     card.innerHTML = `
         <div class="h-48 overflow-hidden bg-gray-200">
             <img src="${data.imageUrl}" alt="${data.title}" 
@@ -138,6 +139,14 @@ function createPhotoCard(doc) {
         <div class="p-4">
             <h3 class="text-lg font-bold text-gray-800">${data.title}</h3>
             ${timeText ? `<p class="text-sm text-gray-500 mt-1">${timeText}</p>` : ''}
+            
+            <div class="mt-3">
+                <a href="${data.imageUrl}" download="${data.title || 'gambar'}.jpg" 
+                   class="inline-flex items-center justify-center w-full bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold py-2 px-4 rounded-lg transition duration-300">
+                    ⬇️ Download Foto
+                </a>
+            </div>
+            
         </div>
     `;
     return card;
@@ -154,7 +163,7 @@ function loadAndListenForPhotos() {
                 if (change.type === 'added') {
                     // Hanya tambahkan elemen baru
                     const newCard = createPhotoCard(doc);
-                    gallery.prepend(newCard); 
+                    gallery.prepend(newCard);  
                     
                 } else if (change.type === 'removed') {
                     // Hapus elemen jika dokumen dihapus
